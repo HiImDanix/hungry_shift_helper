@@ -1,4 +1,8 @@
 import argparse
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Set
+
 import apprise
 import requests
 import time
@@ -6,6 +10,33 @@ import time
 API_DOMAIN: str = "https://dk.usehurrier.com"
 URL_AUTH = f"{API_DOMAIN}/api/mobile/auth"
 TOKEN_EXPIRY_SECONDS: int = 3500  # 100 sec buffer
+
+
+class Shift():
+    def __init__(self, id: int, start: datetime, end: datetime, status: str,
+                 time_zone: str, starting_point_id: int, starting_point_name: str):
+        self.id = id
+        self.start = start
+        self.end = end
+        self.status = status
+        self.time_zone = time_zone
+        self.starting_point_id = starting_point_id
+        self.starting_point_name = starting_point_name
+
+    # Override equals
+    def __eq__(self, other):
+        if isinstance(other, Shift):
+            return self.id == other.id
+        return False
+
+    def __str__(self):
+        return f"shift: {self.id} from {self.start} to {self.end}"
+
+    def __repr__(self):
+        return f"shift: {self.id} from {self.start} to {self.end}"
+
+    def __hash__(self):
+        return hash(self.id)
 
 
 class Hungry:
@@ -18,7 +49,7 @@ class Hungry:
         self.PASSWORD: str = password
         self.EMPLOYEE_ID: int = employee_id
 
-        self.shift_ids = set()
+        self.previously_found_shifts = set()
 
         # URLS
         self.URL_SWAPS: str = f"{API_DOMAIN}/api/rooster/v3/employees/{employee_id}/available_swaps"
@@ -70,7 +101,6 @@ class Hungry:
     @refresh_token
     def _get_swap_shifts(self):
         resp = requests.get(self.URL_SWAPS, params=params, auth=BearerAuth(self.token)).json()
-        return [{'shift_id': 77151, 'start': '2022-03-17T16:00:00', 'end': '2022-03-17T20:00:00', 'status': 'PENDING', 'time_zone': 'Europe/Copenhagen', 'starting_point_id': 3, 'starting_point_name': 'Aalborg bike'}]
         return resp
 
     @refresh_token
@@ -78,19 +108,30 @@ class Hungry:
         resp = requests.get(self.URL_UNASSIGNED, params=params, auth=BearerAuth(self.token)).json()
         return resp
 
-    def get_shifts(self):
-        swap_shifts: dict = self._get_swap_shifts()
-        unassigned_shifts: dict = self._get_unassigned_shifts()
-        found_shifts: dict = swap_shifts + unassigned_shifts
-        found_shift_ids: set = set(shift["shift_id"] for shift in found_shifts)
-        new_shift_ids: set = found_shift_ids - self.shift_ids
-        self.shift_ids = found_shift_ids
+    def get_shifts(self) -> Set[Shift]:
+        swap_shifts: set = Hungry._resp_to_shifts(self._get_swap_shifts())
+        unassigned_shifts: set = Hungry._resp_to_shifts(self._get_unassigned_shifts())
+        found_shifts: set = swap_shifts.union(unassigned_shifts)
 
-        new_shifts = []
-        for shift in found_shifts:
-            if shift["shift_id"] in new_shift_ids:
-                new_shifts.append(shift)
+        new_shifts: Set[Shift] = found_shifts - self.previously_found_shifts
+        self.previously_found_shifts = found_shifts
+
         return new_shifts
+
+    @staticmethod
+    def _resp_to_shifts(shifts: list) -> Set[Shift]:
+        shift_objects = set()
+        for shift in shifts:
+            id = shift["shift_id"]
+            start = datetime.strptime(shift["start"], "%Y-%m-%dT%H:%M:%S")
+            end = datetime.strptime(shift["end"], "%Y-%m-%dT%H:%M:%S")
+            status = shift["status"]
+            time_zone = shift["time_zone"]
+            starting_point_id = shift["starting_point_id"]
+            starting_point_name = shift["starting_point_name"]
+            shift = Shift(id, start, end, status, time_zone, starting_point_id, starting_point_name)
+            shift_objects.add(shift)
+        return shift_objects
 
 
 class BearerAuth(requests.auth.AuthBase):
@@ -133,7 +174,8 @@ if __name__ == "__main__":
         shifts = hungry.get_shifts()
 
         if len(shifts) != 0:
-            print("Found a shift!!")
-            appriseObj.notify(body=str(shifts), title='Hungry has found some shifts!!!')
-            print(shifts)
+            print("Found shifts!")
+            shifts_repr: str = '\n'.join(str(s) for s in shifts)
+            appriseObj.notify(body=shifts_repr, title='Hungry has found some shifts!!!')
+            print(shifts_repr)
         time.sleep(args.frequency)
