@@ -18,6 +18,8 @@ class Hungry:
         self.PASSWORD: str = password
         self.EMPLOYEE_ID: int = employee_id
 
+        self.shift_ids = set()
+
         # URLS
         self.URL_SWAPS: str = f"{API_DOMAIN}/api/rooster/v3/employees/{employee_id}/available_swaps"
         self.URL_UNASSIGNED: str = f"{API_DOMAIN}/api/rooster/v3/employees/{employee_id}/available_unassigned_shifts"
@@ -66,14 +68,29 @@ class Hungry:
         return wrapper
 
     @refresh_token
-    def get_swaps(self):
+    def _get_swap_shifts(self):
         resp = requests.get(self.URL_SWAPS, params=params, auth=BearerAuth(self.token)).json()
+        return [{'shift_id': 77151, 'start': '2022-03-17T16:00:00', 'end': '2022-03-17T20:00:00', 'status': 'PENDING', 'time_zone': 'Europe/Copenhagen', 'starting_point_id': 3, 'starting_point_name': 'Aalborg bike'}]
         return resp
 
     @refresh_token
-    def get_unassigned(self):
+    def _get_unassigned_shifts(self):
         resp = requests.get(self.URL_UNASSIGNED, params=params, auth=BearerAuth(self.token)).json()
         return resp
+
+    def get_shifts(self):
+        swap_shifts: dict = self._get_swap_shifts()
+        unassigned_shifts: dict = self._get_unassigned_shifts()
+        found_shifts: dict = swap_shifts + unassigned_shifts
+        found_shift_ids: set = set(shift["shift_id"] for shift in found_shifts)
+        new_shift_ids: set = found_shift_ids - self.shift_ids
+        self.shift_ids = found_shift_ids
+
+        new_shifts = []
+        for shift in found_shifts:
+            if shift["shift_id"] in new_shift_ids:
+                new_shifts.append(shift)
+        return new_shifts
 
 
 class BearerAuth(requests.auth.AuthBase):
@@ -113,15 +130,10 @@ if __name__ == "__main__":
                   "with_time_zone": hungry.TIMEZONE
                   }
 
-        resp = hungry.get_swaps()
-        resp2 = hungry.get_unassigned()
+        shifts = hungry.get_shifts()
 
-        if len(resp) != 0:
-            print("Found a swap!")
-            apobj.notify(body=str(resp), title='Hungry has found some swap shifts!!!')
-            print(resp)
-        elif len(resp2) != 0:
-            print("Found a shift!")
-            apobj.notify(body=str(resp2), title='Hungry has found some shifts!!!')
-            print(resp2)
+        if len(shifts) != 0:
+            print("Found a shift!!")
+            appriseObj.notify(body=str(shifts), title='Hungry has found some shifts!!!')
+            print(shifts)
         time.sleep(args.frequency)
