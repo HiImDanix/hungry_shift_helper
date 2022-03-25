@@ -9,6 +9,7 @@ import apprise
 import requests
 import time
 
+from Storage import Storage
 from shift import Shift
 from timeslot import RecurringTimeslot
 
@@ -60,20 +61,11 @@ class HungryAPI:
         try:
             resp = requests.post(HungryAPI.URL_AUTH, headers=headers, json=data)
             resp.raise_for_status()
+            resp_json = resp.json()
+            # set token and expiration
+            Storage().save_token_and_cityid(resp_json["token"], time.time() + HungryAPI.TOKEN_EXPIRY_SECONDS, resp_json["city_id"])
         except Exception as e:
             raise Exception("Failed to authenticate! Wrong credentials?")
-        else:
-            self.token_expiration = time.time() + HungryAPI.TOKEN_EXPIRY_SECONDS
-
-        try:
-            resp_json = resp.json()
-
-            self.token: str = resp_json["token"]
-            self.contract_type: str = resp_json["contract_type"].lower()
-            self.city_id: int = resp_json["city_id"]
-            self.city_name: str = resp_json["city_name"].lower()
-        except Exception as e:
-            raise Exception("Server responded with unexpected data while trying to authenticate")
 
     '''
     Returns the app version and short app version
@@ -109,7 +101,8 @@ class HungryAPI:
     '''
     def refresh_token(decorated):
         def wrapper(api, *args, **kwargs):
-            if time.time() > api.token_expiration:
+            storage = Storage()
+            if storage.token_expiration is None or time.time() > storage.token_expiration:
                 api.authenticate()
             return decorated(api, *args, **kwargs)
 
@@ -117,13 +110,13 @@ class HungryAPI:
 
     @refresh_token
     def _get_swap_shifts(self):
-        resp = requests.get(self.URL_SWAPS, params=self.__get_params(), auth=BearerAuth(self.token))
+        resp = requests.get(self.URL_SWAPS, params=self.__get_params(), auth=BearerAuth(Storage().token))
         resp.raise_for_status()
         return resp.json()
 
     @refresh_token
     def _get_unassigned_shifts(self):
-        resp = requests.get(self.URL_UNASSIGNED, params=self.__get_params(), auth=BearerAuth(self.token))
+        resp = requests.get(self.URL_UNASSIGNED, params=self.__get_params(), auth=BearerAuth(Storage().token))
         resp.raise_for_status()
         return resp.json()
 
@@ -161,7 +154,7 @@ class HungryAPI:
     def __get_params(self) -> dict:
         return {"start_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                   "end_at": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                  "city_id": self.city_id,
+                  "city_id": Storage().city_id,
                   "with_time_zone": HungryAPI.TIMEZONE
                   }
 

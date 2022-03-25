@@ -13,6 +13,7 @@ import time
 from hungryAPI import HungryAPI
 from shift import Shift
 from timeslot import RecurringTimeslot
+from Storage import Storage
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Checks if there are shifts available on hungry.dk',
@@ -22,7 +23,6 @@ if __name__ == "__main__":
     parser.add_argument("id", help="Your hungry.dk employee ID (see app -> my profile)", type=int)
     parser.add_argument("notify", help="Apprise notification URL")
     parser.add_argument("-d", "--debug", help="Enable debug mode", action="store_true")
-    parser.add_argument("--timeslot-file", help="File to load timeslots from", type=pathlib.Path)
     parser.add_argument("--auto-take", help="Automatically take shifts that the chosen timeslots", action="store_true",
                         default=False)
     parser.add_argument("-f", "--frequency", help="Executes the script every <seconds> (use CRON instead!)",
@@ -34,10 +34,6 @@ if __name__ == "__main__":
         import logging
         logging.basicConfig(level=logging.DEBUG)
 
-    # Check that timeslot-file exists, otherwise throw exception
-    if args.timeslot_file is not None and not args.timeslot_file.exists():
-        raise FileNotFoundError(f"Timeslot file {args.timeslot_file} does not exist")
-
     # Notifications
     appriseObj = apprise.Apprise()
     if appriseObj.add(args.notify) is False:
@@ -46,15 +42,12 @@ if __name__ == "__main__":
     # Hungry
     hungry = HungryAPI(args.email, args.password, args.id)
 
-    # Create tmp directory if doesn't exist
-    pathlib.Path("tmp").mkdir(parents=True, exist_ok=True)
+    # Storage
+    storage = Storage()
 
-    # load timeslots from file.
-    try:
-        with open("tmp/timeslots.json", "r") as f:
-            timeslots = [RecurringTimeslot.deserialize(timeslot) for timeslot in json.load(f)]
-    except FileNotFoundError:
-        print("No timeslot file found. Creating new one.")
+    # Load timeslots from storage
+    if  len(storage.recurring_timeslots) == 0:
+        print("No timeslots found. Creating a default one")
         # Create a recurring timeslot that covers all days of week, all hours, and all shift lengths
         # days of week
         days_of_week = [0, 1, 2, 3, 4, 5, 6]
@@ -66,11 +59,8 @@ if __name__ == "__main__":
         # create a recurring timeslot
         timeslot = RecurringTimeslot(days_of_week, start.time(), end.time(), shift_length)
 
-        timeslots = [timeslot]
-
-        # save timeslots to file
-        with open("tmp/timeslots.json", "w") as f:
-            json.dump([timeslot.serialize() for timeslot in timeslots], f)
+        # add the timeslot to the storage
+        storage.add_recurring_timeslot(timeslot)
 
     # Run once or every args.frequency seconds
     print("Starting the script...")
@@ -78,23 +68,18 @@ if __name__ == "__main__":
         # Get shifts
         shifts = hungry.get_shifts()
 
-        # Read previously saved shifts from file
-        try:
-            with open("tmp/shifts.json", "r") as f:
-                saved_shifts = [Shift.deserialize(shift) for shift in json.load(f)]
-        except FileNotFoundError:
-            saved_shifts = []
+        # Read saved shifts from storage
+        saved_shifts = storage.get_shifts()
 
         # Find shifts that are not saved
         new_shifts = [shift for shift in shifts if shift not in saved_shifts]
 
-        # Create file with found shifts
-        with open("tmp/shifts.json", "w") as f:
-            json.dump([shift.serialize() for shift in shifts], f)
+        # Save shifts to storage
+        storage.save_shifts(shifts)
 
         # Get shifts that satisfy the user specified timeslots
         valid_shifts = set()
-        for timeslot in timeslots:
+        for timeslot in storage.recurring_timeslots:
             for shift in new_shifts:
                 if timeslot.is_valid_shift(shift.start, shift.end):
                     valid_shifts.add(shift)

@@ -79,7 +79,7 @@ class RecurringTimeslot():
             "start": self.start.strftime("%H:%M"),
             "end": self.end.strftime("%H:%M"),
             "days": self.recurring_days,
-            "minMinutes": self.min_minutes
+            "min_minutes": self.min_minutes
         }
 
     '''
@@ -91,5 +91,5 @@ class RecurringTimeslot():
             json_data["days"],
             datetime.strptime(json_data["start"], "%H:%M").time(),
             datetime.strptime(json_data["end"], "%H:%M").time(),
-            json_data["minMinutes"]
+            json_data["min_minutes"]
         )
