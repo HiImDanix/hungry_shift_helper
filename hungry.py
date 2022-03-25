@@ -46,7 +46,7 @@ if __name__ == "__main__":
     storage = Storage()
 
     # Load timeslots from storage
-    if  len(storage.recurring_timeslots) == 0:
+    if len(storage.recurring_timeslots) == 0:
         print("No timeslots found. Creating a default one")
         # Create a recurring timeslot that covers all days of week, all hours, and all shift lengths
         # days of week

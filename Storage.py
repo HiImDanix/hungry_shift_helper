@@ -18,7 +18,7 @@ class Storage(metaclass=Singleton):
     This class allows loading and saving of data to and from a file database.
     It can load and save timeslots, shifts, and token with expiration datetime.
     '''
-    def __init__(self, directory='tmp/'):
+    def __init__(self, directory='data/'):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         self.directory = base_dir = directory
 
@@ -124,7 +124,6 @@ class Storage(metaclass=Singleton):
     '''
     Load recurring timeslots from json file
     '''
-
     def _load_recurring_timeslots(self):
         # deserialize json and load from file if exists
         try:
@@ -136,7 +135,6 @@ class Storage(metaclass=Singleton):
     '''
     Load shifts from json file
     '''
-
     def _load_shifts(self):
         try:
             with open(self.directory + 'shifts.json', 'r') as f:
@@ -152,7 +150,6 @@ class Storage(metaclass=Singleton):
         expires: datetime
         city_id: int
     '''
-
     def _load_token_and_cityid(self):
         try:
             with open(self.directory + 'token.json', 'r') as f:
