@@ -43,6 +43,7 @@ class HungryAPI:
         # URLS
         self.URL_SWAPS: str = f"{HungryAPI.API_DOMAIN}/api/rooster/v3/employees/{employee_id}/available_swaps"
         self.URL_UNASSIGNED: str = f"{HungryAPI.API_DOMAIN}/api/rooster/v3/employees/{employee_id}/available_unassigned_shifts"
+        self.URL_TAKE_SWAP: str = f"{HungryAPI.API_DOMAIN}/api/rooster/v3/{{}}/swap"
 
         # App version
         self.app_version: int
@@ -127,7 +128,6 @@ class HungryAPI:
         return resp.json()
 
     def get_shifts(self) -> Set[Shift]:
-
         swap_shifts: set = HungryAPI._resp_to_shifts(self._get_swap_shifts())
         unassigned_shifts: set = HungryAPI._resp_to_shifts(self._get_unassigned_shifts())
         found_shifts: set = swap_shifts.union(unassigned_shifts)
@@ -136,12 +136,23 @@ class HungryAPI:
 
     # function to automatically take a shift
     def take_shift(self, shift: Shift):
-        print(f"Taking shift {shift}")
-        data = {"shift_id": shift.id}
-        headers = {"user-agent": f"Roadrunner/ANDROID/{self.APP_VERSION}/{self.APP_SHORT_VERSION}"}
-        resp = requests.post(HungryAPI.URL_TAKE_SHIFT, headers=headers, json=data, auth=BearerAuth(self.token))
+        if shift.status == "PENDING":
+            self._take_swap_shift(shift)
+        elif shift.status == "UNASSIGNED":
+            self._take_unassigned_shift(shift)
+        else:
+            raise Exception("Shift is not pending or unassigned.Shift status is " + shift.status)
+
+    def _take_swap_shift(self, shift: Shift):
+        url_take_swap = self.URL_TAKE_SWAP.format(shift.id)
+        resp = requests.post(url_take_swap, auth=BearerAuth(self.token))
         resp.raise_for_status()
-        print("Successfully took shift!")
+
+    def _take_unassigned_shift(self, shift: Shift):
+        pass
+        # url_take_unassigned = self.URL_TAKE_UNASSIGNED.format(shift.id)
+        # resp = requests.post(url_take_unassigned, auth=BearerAuth(self.token))
+        # resp.raise_for_status()
 
 
     '''

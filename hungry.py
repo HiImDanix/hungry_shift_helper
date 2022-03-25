@@ -23,6 +23,8 @@ if __name__ == "__main__":
     parser.add_argument("notify", help="Apprise notification URL")
     parser.add_argument("-d", "--debug", help="Enable debug mode", action="store_true")
     parser.add_argument("--timeslot-file", help="File to load timeslots from", type=pathlib.Path)
+    parser.add_argument("--auto-take", help="Automatically take shifts that the chosen timeslots", action="store_true",
+                        default=False)
     parser.add_argument("-f", "--frequency", help="Executes the script every <seconds> (use CRON instead!)",
                         metavar="seconds", type=int)
     args = parser.parse_args()
@@ -97,9 +99,21 @@ if __name__ == "__main__":
                 if timeslot.is_valid_shift(shift.start, shift.end):
                     valid_shifts.add(shift)
 
+        # Take shifts
+        if args.auto_take:
+            for shift in valid_shifts:
+                print(f"Taking shift {shift.start} - {shift.end}")
+
+                # Take the shift
+                hungry.take_shift(shift)
+
         # Notify if a valid shift is found
         if len(valid_shifts) > 0:
-            print(f"Found {len(valid_shifts)} new shifts!")
+            # print that shifts were found or taken depending on the auto-take flag
+            if args.auto_take:
+                print(f"{len(valid_shifts)} shifts were taken.")
+            else:
+                print(f"{len(valid_shifts)} shifts were found.")
             shifts_repr: str = '\n'.join(str(s) for s in shifts)
             print(shifts_repr)
             appriseObj.notify(body=shifts_repr, title=f"{len(shifts)} new shifts found!")
