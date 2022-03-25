@@ -1,49 +1,41 @@
 import argparse
+import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Set
+from functools import singledispatch
 
 import apprise
 import requests
 import time
 
+from shift import Shift
+from timeslot import RecurringTimeslot
+
 API_DOMAIN: str = "https://dk.usehurrier.com"
 URL_AUTH = f"{API_DOMAIN}/api/mobile/auth"
+# The time that in seconds after which the token is considered expired
 TOKEN_EXPIRY_SECONDS: int = 3500  # 100 sec buffer
+# get latest app version URL
+APP_VERSION_DOMAIN: str = "https://api.appcenter.ms/v0.1/public/sdk/apps/91607026-b44d-46a9-86f9-7d59d86e3105/releases/latest"
 
 
-class Shift():
-    def __init__(self, id: int, start: datetime, end: datetime, status: str,
-                 time_zone: str, starting_point_id: int, starting_point_name: str):
-        self.id = id
-        self.start = start
-        self.end = end
-        self.status = status
-        self.time_zone = time_zone
-        self.starting_point_id = starting_point_id
-        self.starting_point_name = starting_point_name
-
-    # Override equals
-    def __eq__(self, other):
-        if isinstance(other, Shift):
-            return self.id == other.id
-        return False
-
-    def __str__(self):
-        return f"shift: {self.id} from {self.start} to {self.end}"
-
-    def __repr__(self):
-        return f"shift: {self.id} from {self.start} to {self.end}"
-
-    def __hash__(self):
-        return hash(self.id)
-
-
-class Hungry:
+class HungryAPI:
     TIMEZONE = "Europe/Copenhagen"
-    APP_VERSION: int = 291
-    APP_SHORT_VERSION: str = "v3.2209.4"
+    # default fallback app version
+    app_version: int = 291
+    app_short_version: str = "v3.2209.4"
 
+    ''''
+    The HungryAPI class is responsible for handling the communication with the Hungry API.
+    It uses the undocumented usehurrier API to authenticate and retrieve data.
+    Notifications are handled by Apprise.
+    
+    Args:
+        username (str): The username to use for authentication
+        password (str): The password to use for authentication
+        employee_id (str): The employee id found in the Roadrunner app -> my profile -> id
+    '''
     def __init__(self, email: str, password: str, employee_id: int):
         self.EMAIL: str = email
         self.PASSWORD: str = password
@@ -56,8 +48,8 @@ class Hungry:
         self.URL_UNASSIGNED: str = f"{API_DOMAIN}/api/rooster/v3/employees/{employee_id}/available_unassigned_shifts"
 
         # App version
-        self.APP_VERSION: int
-        self.APP_SHORT_VERSION: str
+        self.app_version: int
+        self.app_short_version: str
         self.APP_VERSION, self.APP_SHORT_VERSION = self._get_app_version()
 
         # Authenticate
@@ -85,11 +77,38 @@ class Hungry:
         except Exception as e:
             raise Exception("Server responded with unexpected data while trying to authenticate")
 
+    '''
+    Returns the app version and short app version
+    For example:
+        (291, "v3.2209.4")
+    
+    Returns:
+        int, str: app version and short app version
+    '''
     @staticmethod
     def _get_app_version() -> (int, str):
-        # https://api.appcenter.ms/v0.1/public/sdk/apps/91607026-b44d-46a9-86f9-7d59d86e3105/releases/latest
-        return 291, "v3.2209.4"
+        # fallback version
+        version = 291
+        short_version = "v3.2209.4"
 
+        resp = requests.get(APP_VERSION_DOMAIN)
+        # if response is not ok, return default values
+        if not resp.ok:
+            return version, short_version
+
+        # parse response
+        resp_json = resp.json()
+
+        # fallback version
+        if "version" not in resp_json and "short_version" not in resp_json:
+            return version, short_version
+
+        # return version and short version
+        return int(resp_json["version"]), resp_json["short_version"]
+
+    '''
+    A decorator for refreshing the token if it is expired
+    '''
     def refresh_token(decorated):
         def wrapper(api, *args, **kwargs):
             if time.time() > api.token_expiration:
@@ -100,17 +119,20 @@ class Hungry:
 
     @refresh_token
     def _get_swap_shifts(self):
-        resp = requests.get(self.URL_SWAPS, params=params, auth=BearerAuth(self.token)).json()
-        return resp
+        resp = requests.get(self.URL_SWAPS, params=HungryAPI._get_params(), auth=BearerAuth(self.token))
+        resp.raise_for_status()
+        return resp.json()
 
     @refresh_token
     def _get_unassigned_shifts(self):
-        resp = requests.get(self.URL_UNASSIGNED, params=params, auth=BearerAuth(self.token)).json()
-        return resp
+        resp = requests.get(self.URL_UNASSIGNED, params=HungryAPI._get_params(), auth=BearerAuth(self.token))
+        resp.raise_for_status()
+        return resp.json()
 
     def get_shifts(self) -> Set[Shift]:
-        swap_shifts: set = Hungry._resp_to_shifts(self._get_swap_shifts())
-        unassigned_shifts: set = Hungry._resp_to_shifts(self._get_unassigned_shifts())
+
+        swap_shifts: set = HungryAPI._resp_to_shifts(self._get_swap_shifts())
+        unassigned_shifts: set = HungryAPI._resp_to_shifts(self._get_unassigned_shifts())
         found_shifts: set = swap_shifts.union(unassigned_shifts)
 
         new_shifts: Set[Shift] = found_shifts - self.previously_found_shifts
@@ -118,6 +140,23 @@ class Hungry:
 
         return new_shifts
 
+    '''
+    Returns parameters for the requests that
+    '''
+    @staticmethod
+    def _get_params() -> dict:
+        return {"start_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                  "end_at": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                  "city_id": hungry.city_id,
+                  "with_time_zone": hungry.TIMEZONE
+                  }
+
+    '''
+    Converts a response from the server to a set of shift objects
+    
+    :param resp: response from the server as json
+    :return: set of shifts
+    '''
     @staticmethod
     def _resp_to_shifts(shifts: list) -> Set[Shift]:
         shift_objects = set()
@@ -133,7 +172,9 @@ class Hungry:
             shift_objects.add(shift)
         return shift_objects
 
-
+'''
+A wrapper around requests auth class that allows to use Bearer token for communication with the Hungry API
+'''#
 class BearerAuth(requests.auth.AuthBase):
     def __init__(self, token: str):
         self.token: str = token
@@ -160,22 +201,38 @@ if __name__ == "__main__":
         raise Exception("The given Apprise notification URL is invalid. ")
 
     # Hungry
-    hungry = Hungry(args.email, args.password, args.id)
+    hungry = HungryAPI(args.email, args.password, args.id)
 
-    print("Running!")
-    run_continuously: bool = (args.frequency is not None)
-    while run_continuously:
-        params = {"start_at": "2022-03-08T21:52:24.847Z",
-                  "end_at": "2030-03-30T05:59:59.999Z",
-                  "city_id": hungry.city_id,
-                  "with_time_zone": hungry.TIMEZONE
-                  }
+    # Create a recurring timeslot that covers all days of week, all hours, and all shift lengths
+    # days of week
+    days_of_week = [0, 1, 2, 3, 4, 5, 6]
+    # start and end time
+    start = datetime.strptime("00:00", "%H:%M")
+    end = datetime.strptime("23:59", "%H:%M")
+    # min shift length (minutes)
+    shift_length = 0
+    # create a recurring timeslot
+    timeslot = RecurringTimeslot(days_of_week, start.time(), end.time(), shift_length)
 
+    # Run once or every args.frequency seconds
+    print("Starting the script...")
+    while True:
+        # Get shifts
         shifts = hungry.get_shifts()
+        # get timeslots
+        timeslots = [timeslot]
 
-        if len(shifts) != 0:
-            print("Found shifts!")
-            shifts_repr: str = '\n'.join(str(s) for s in shifts)
-            appriseObj.notify(body=shifts_repr, title='Hungry has found some shifts!!!')
-            print(shifts_repr)
+        # Get shifts that satisfy the user specified timeslots
+        valid_shifts = [shift for shift in shifts if timeslot.is_valid_shift(shift.start, shift.end)]
+
+        # Notify if a valid shift is found
+        if len(shifts) > 0:
+            print(f"Found {len(shifts)} new shifts!")
+            for shift in valid_shifts:
+                shifts_repr: str = '\n'.join(str(s) for s in shifts)
+                print(shifts_repr)
+                appriseObj.notify(body=shifts_repr, title=f"{len(shifts)} new shifts found!")
+        if args.frequency is None:
+            break
         time.sleep(args.frequency)
+    print("Done!")
