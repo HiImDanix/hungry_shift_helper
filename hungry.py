@@ -79,10 +79,9 @@ if __name__ == "__main__":
         # Notify if a valid shift is found
         if len(valid_shifts) > 0:
             print(f"Found {len(valid_shifts)} new shifts!")
-            for shift in valid_shifts:
-                shifts_repr: str = '\n'.join(str(s) for s in shifts)
-                print(shifts_repr)
-                appriseObj.notify(body=shifts_repr, title=f"{len(shifts)} new shifts found!")
+            shifts_repr: str = '\n'.join(str(s) for s in shifts)
+            print(shifts_repr)
+            appriseObj.notify(body=shifts_repr, title=f"{len(shifts)} new shifts found!")
         if args.frequency is None:
             break
         time.sleep(args.frequency)
