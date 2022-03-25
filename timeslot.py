@@ -43,16 +43,12 @@ class RecurringTimeslot():
     '''
 
     def is_valid_shift(self, start: datetime, end: datetime):
-        print(start)
-        print(end)
         # Correct day
         if start.weekday() not in self.recurring_days:
-            print(1)
             return False
 
         # Start and end time falls within timeslot
         if start.time() < self.start or end.time() > self.end:
-            print(2)
             return False
 
         # (end-start) satisfies the minimum amount of minutes requirement
@@ -60,12 +56,40 @@ class RecurringTimeslot():
             return False
         return True
 
-    # return string representation of timeslot in the format of:
-    # "10:00-12:00 every Monday, Wednesday, Friday where minimum shift length is 30 minutes"
+    '''
+    Returns a string representation of the timeslot in the format of:
+    "10:00-12:00 every Monday, Wednesday, Friday where minimum shift length is 30 minutes"
+    '''
     def __str__(self):
         return "{}-{} every {} where minimum shift length is {} minutes".format(
             self.start.strftime("%H:%M"),
             self.end.strftime("%H:%M"),
             ", ".join([self._get_day_name(day) for day in self.recurring_days]),
-            self.minMinutes
+            self.min_minutes
+        )
+
+    def __repr__(self):
+        return self.__str__()
+
+    '''
+    Serializes the timeslot to a JSON object.
+    '''
+    def to_json(self):
+        return {
+            "start": self.start.strftime("%H:%M"),
+            "end": self.end.strftime("%H:%M"),
+            "days": self.recurring_days,
+            "minMinutes": self.min_minutes
+        }
+
+    '''
+    Deserializes the timeslot from a JSON object.
+    '''
+    @staticmethod
+    def from_json(json_data):
+        return RecurringTimeslot(
+            json_data["days"],
+            datetime.strptime(json_data["start"], "%H:%M").time(),
+            datetime.strptime(json_data["end"], "%H:%M").time(),
+            json_data["minMinutes"]
         )

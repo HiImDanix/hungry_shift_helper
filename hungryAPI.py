@@ -118,13 +118,13 @@ class HungryAPI:
 
     @refresh_token
     def _get_swap_shifts(self):
-        resp = requests.get(self.URL_SWAPS, params=self._get_params(), auth=BearerAuth(self.token))
+        resp = requests.get(self.URL_SWAPS, params=self.__get_params(), auth=BearerAuth(self.token))
         resp.raise_for_status()
         return resp.json()
 
     @refresh_token
     def _get_unassigned_shifts(self):
-        resp = requests.get(self.URL_UNASSIGNED, params=self._get_params(), auth=BearerAuth(self.token))
+        resp = requests.get(self.URL_UNASSIGNED, params=self.__get_params(), auth=BearerAuth(self.token))
         resp.raise_for_status()
         return resp.json()
 
@@ -139,10 +139,20 @@ class HungryAPI:
 
         return new_shifts
 
+    # function to automatically take a shift
+    def take_shift(self, shift: Shift):
+        print(f"Taking shift {shift}")
+        data = {"shift_id": shift.id}
+        headers = {"user-agent": f"Roadrunner/ANDROID/{self.APP_VERSION}/{self.APP_SHORT_VERSION}"}
+        resp = requests.post(HungryAPI.URL_TAKE_SHIFT, headers=headers, json=data, auth=BearerAuth(self.token))
+        resp.raise_for_status()
+        print("Successfully took shift!")
+
+
     '''
-    Returns parameters for the requests that
+    Parameters for requests for shifts
     '''
-    def _get_params(self) -> dict:
+    def __get_params(self) -> dict:
         return {"start_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                   "end_at": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                   "city_id": self.city_id,
