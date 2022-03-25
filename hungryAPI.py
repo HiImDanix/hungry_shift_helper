@@ -40,8 +40,6 @@ class HungryAPI:
         self.PASSWORD: str = password
         self.EMPLOYEE_ID: int = employee_id
 
-        self.previously_found_shifts = set()
-
         # URLS
         self.URL_SWAPS: str = f"{HungryAPI.API_DOMAIN}/api/rooster/v3/employees/{employee_id}/available_swaps"
         self.URL_UNASSIGNED: str = f"{HungryAPI.API_DOMAIN}/api/rooster/v3/employees/{employee_id}/available_unassigned_shifts"
@@ -134,10 +132,7 @@ class HungryAPI:
         unassigned_shifts: set = HungryAPI._resp_to_shifts(self._get_unassigned_shifts())
         found_shifts: set = swap_shifts.union(unassigned_shifts)
 
-        new_shifts: Set[Shift] = found_shifts - self.previously_found_shifts
-        self.previously_found_shifts = found_shifts
-
-        return new_shifts
+        return found_shifts
 
     # function to automatically take a shift
     def take_shift(self, shift: Shift):

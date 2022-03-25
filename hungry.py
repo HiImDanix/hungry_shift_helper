@@ -27,10 +27,14 @@ if __name__ == "__main__":
                         metavar="seconds", type=int)
     args = parser.parse_args()
 
+    # set up logging
+    if args.debug:
+        import logging
+        logging.basicConfig(level=logging.DEBUG)
+
     # Check that timeslot-file exists, otherwise throw exception
     if args.timeslot_file is not None and not args.timeslot_file.exists():
         raise FileNotFoundError(f"Timeslot file {args.timeslot_file} does not exist")
-
 
     # Notifications
     appriseObj = apprise.Apprise()
@@ -40,10 +44,13 @@ if __name__ == "__main__":
     # Hungry
     hungry = HungryAPI(args.email, args.password, args.id)
 
+    # Create tmp directory if doesn't exist
+    pathlib.Path("tmp").mkdir(parents=True, exist_ok=True)
+
     # load timeslots from file.
     try:
-        with open("timeslots.json", "r") as f:
-            timeslots = [RecurringTimeslot.from_json(timeslot) for timeslot in json.load(f)]
+        with open("tmp/timeslots.json", "r") as f:
+            timeslots = [RecurringTimeslot.deserialize(timeslot) for timeslot in json.load(f)]
     except FileNotFoundError:
         print("No timeslot file found. Creating new one.")
         # Create a recurring timeslot that covers all days of week, all hours, and all shift lengths
@@ -60,8 +67,8 @@ if __name__ == "__main__":
         timeslots = [timeslot]
 
         # save timeslots to file
-        with open("timeslots.json", "w") as f:
-            json.dump([timeslot.to_json() for timeslot in timeslots], f)
+        with open("tmp/timeslots.json", "w") as f:
+            json.dump([timeslot.serialize() for timeslot in timeslots], f)
 
     # Run once or every args.frequency seconds
     print("Starting the script...")
@@ -69,10 +76,24 @@ if __name__ == "__main__":
         # Get shifts
         shifts = hungry.get_shifts()
 
+        # Read previously saved shifts from file
+        try:
+            with open("tmp/shifts.json", "r") as f:
+                saved_shifts = [Shift.deserialize(shift) for shift in json.load(f)]
+        except FileNotFoundError:
+            saved_shifts = []
+
+        # Find shifts that are not saved
+        new_shifts = [shift for shift in shifts if shift not in saved_shifts]
+
+        # Create file with found shifts
+        with open("tmp/shifts.json", "w") as f:
+            json.dump([shift.serialize() for shift in shifts], f)
+
         # Get shifts that satisfy the user specified timeslots
         valid_shifts = set()
         for timeslot in timeslots:
-            for shift in shifts:
+            for shift in new_shifts:
                 if timeslot.is_valid_shift(shift.start, shift.end):
                     valid_shifts.add(shift)
 

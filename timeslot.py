@@ -72,9 +72,9 @@ class RecurringTimeslot():
         return self.__str__()
 
     '''
-    Serializes the timeslot to a JSON object.
+    Serialize
     '''
-    def to_json(self):
+    def serialize(self):
         return {
             "start": self.start.strftime("%H:%M"),
             "end": self.end.strftime("%H:%M"),
@@ -83,10 +83,10 @@ class RecurringTimeslot():
         }
 
     '''
-    Deserializes the timeslot from a JSON object.
+    Deserialize
     '''
     @staticmethod
-    def from_json(json_data):
+    def deserialize(json_data):
         return RecurringTimeslot(
             json_data["days"],
             datetime.strptime(json_data["start"], "%H:%M").time(),

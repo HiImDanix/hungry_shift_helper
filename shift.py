@@ -32,13 +32,34 @@ class Shift():
             ((self.end - self.start).seconds // 60) % 60
         )
 
-    '''
-    A string representation of the Shift object in the format of:
-    "February 4, 14:00-16:00 (2h 30 minutes)"
-    note: It assumes that start end happen on the same day
-    '''
     def __repr__(self):
         return self.__str__()
 
     def __hash__(self):
         return hash(self.id)
+
+    # serialize
+    def serialize(self):
+        return {
+            "id": self.id,
+            "start": self.start.isoformat(),
+            "end": self.end.isoformat(),
+            "status": self.status,
+            "time_zone": self.time_zone,
+            "starting_point_id": self.starting_point_id,
+            "starting_point_name": self.starting_point_name
+        }
+
+    # deserialize
+    @staticmethod
+    def deserialize(json_data):
+        return Shift(
+            json_data["id"],
+            datetime.fromisoformat(json_data["start"]),
+            datetime.fromisoformat(json_data["end"]),
+            json_data["status"],
+            json_data["time_zone"],
+            json_data["starting_point_id"],
+            json_data["starting_point_name"]
+        )
+
