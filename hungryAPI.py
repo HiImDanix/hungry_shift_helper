@@ -12,16 +12,15 @@ import time
 from shift import Shift
 from timeslot import RecurringTimeslot
 
-API_DOMAIN: str = "https://dk.usehurrier.com"
-URL_AUTH = f"{API_DOMAIN}/api/mobile/auth"
-# The time that in seconds after which the token is considered expired
-TOKEN_EXPIRY_SECONDS: int = 3500  # 100 sec buffer
-# get latest app version URL
-APP_VERSION_DOMAIN: str = "https://api.appcenter.ms/v0.1/public/sdk/apps/91607026-b44d-46a9-86f9-7d59d86e3105/releases/latest"
-
 
 class HungryAPI:
     TIMEZONE = "Europe/Copenhagen"
+    # get latest app version URL
+    APP_VERSION_DOMAIN: str = "https://api.appcenter.ms/v0.1/public/sdk/apps/91607026-b44d-46a9-86f9-7d59d86e3105/releases/latest"
+    API_DOMAIN: str = "https://dk.usehurrier.com"
+    URL_AUTH = f"{API_DOMAIN}/api/mobile/auth"
+    # The time that in seconds after which the token is considered expired
+    TOKEN_EXPIRY_SECONDS: int = 3500  # 100 sec buffer
     # default fallback app version
     app_version: int = 291
     app_short_version: str = "v3.2209.4"
@@ -44,8 +43,8 @@ class HungryAPI:
         self.previously_found_shifts = set()
 
         # URLS
-        self.URL_SWAPS: str = f"{API_DOMAIN}/api/rooster/v3/employees/{employee_id}/available_swaps"
-        self.URL_UNASSIGNED: str = f"{API_DOMAIN}/api/rooster/v3/employees/{employee_id}/available_unassigned_shifts"
+        self.URL_SWAPS: str = f"{HungryAPI.API_DOMAIN}/api/rooster/v3/employees/{employee_id}/available_swaps"
+        self.URL_UNASSIGNED: str = f"{HungryAPI.API_DOMAIN}/api/rooster/v3/employees/{employee_id}/available_unassigned_shifts"
 
         # App version
         self.app_version: int
@@ -60,12 +59,12 @@ class HungryAPI:
         data = {"user": {"user_name": self.EMAIL, "password": self.PASSWORD}}
         headers = {"user-agent": f"Roadrunner/ANDROID/{self.APP_VERSION}/{self.APP_SHORT_VERSION}"}
         try:
-            resp = requests.post(URL_AUTH, headers=headers, json=data)
+            resp = requests.post(HungryAPI.URL_AUTH, headers=headers, json=data)
             resp.raise_for_status()
         except Exception as e:
             raise Exception("Failed to authenticate! Wrong credentials?")
         else:
-            self.token_expiration = time.time() + TOKEN_EXPIRY_SECONDS
+            self.token_expiration = time.time() + HungryAPI.TOKEN_EXPIRY_SECONDS
 
         try:
             resp_json = resp.json()
@@ -91,7 +90,7 @@ class HungryAPI:
         version = 291
         short_version = "v3.2209.4"
 
-        resp = requests.get(APP_VERSION_DOMAIN)
+        resp = requests.get(HungryAPI.APP_VERSION_DOMAIN)
         # if response is not ok, return default values
         if not resp.ok:
             return version, short_version
