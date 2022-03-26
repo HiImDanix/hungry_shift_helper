@@ -45,9 +45,15 @@ if __name__ == "__main__":
     # Storage
     storage = Storage()
 
+    # if no recurring timeslots and take shifts is enabled, confirm that the user wants to continue
+    if args.auto_take and len(storage.recurringTimeslots) == 0:
+        print("No recurring timeslots are set and auto-take is enabled. Do you want to continue? [y/n]")
+        if input().lower() != "y":
+            exit(0)
+
     # Load timeslots from storage
     if len(storage.recurring_timeslots) == 0:
-        print("No timeslots found. Creating a default one")
+        print("No timeslots found. Creating a default one that covers everything")
         # Create a recurring timeslot that covers all days of week, all hours, and all shift lengths
         # days of week
         days_of_week = [0, 1, 2, 3, 4, 5, 6]
