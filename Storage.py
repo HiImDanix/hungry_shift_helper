@@ -61,6 +61,11 @@ class Storage(metaclass=Singleton):
         self._recurring_timeslots.append(timeslot)
         self.save_recurring_timeslots(self._recurring_timeslots)
 
+    # Delete recurring timeslot
+    def delete_recurring_timeslot(self, timeslot):
+        self._recurring_timeslots.remove(timeslot)
+        self.save_recurring_timeslots(self._recurring_timeslots)
+
     # Add shift
     def add_shift(self, shift):
         self._shifts.append(shift)

@@ -22,9 +22,9 @@ if __name__ == "__main__":
     parser.add_argument("password", help="Your hungry.dk password", type=str)
     parser.add_argument("id", help="Your hungry.dk employee ID (see app -> my profile)", type=int)
     parser.add_argument("notify", help="Apprise notification URL")
-    parser.add_argument("-d", "--debug", help="Enable debug mode", action="store_true")
     parser.add_argument("--auto-take", help="Automatically take shifts that the chosen timeslots", action="store_true",
                         default=False)
+    parser.add_argument("-d", "--debug", help="Enable debug mode", action="store_true")
     parser.add_argument("-f", "--frequency", help="Executes the script every <seconds> (use CRON instead!)",
                         metavar="seconds", type=int)
     args = parser.parse_args()

@@ -32,6 +32,22 @@ class RecurringTimeslot():
         return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day_number]
 
     '''
+    Returns the day number from the day name supplied as string starting with monday = 0
+    or none if not a valid day.
+    '''
+    @staticmethod
+    def _day_name_to_int(day_name):
+        return {
+            "monday": 0,
+            "tuesday": 1,
+            "wednesday": 2,
+            "thursday": 3,
+            "friday": 4,
+            "saturday": 5,
+            "sunday": 6
+        }[day_name.strip().lower()]
+
+    '''
     Returns True if a shift falls within the timeslot, False otherwise.
     
     Args:
