@@ -24,9 +24,9 @@ def create_timeslot(storage):
     while not success:
         # Allow user to input start and end times
         try:
-            start_time = input("Enter start time: ")
+            start_time = input("Enter start time (23:59): ")
             start_time = datetime.strptime(start_time, '%H:%M')
-            end_time = input("Enter end time: ")
+            end_time = input("Enter end time (23:59): ")
             end_time = datetime.strptime(end_time, '%H:%M')
             success = True
         except ValueError:
