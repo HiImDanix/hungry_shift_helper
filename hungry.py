@@ -14,6 +14,7 @@ from hungryAPI import HungryAPI
 from shift import Shift
 from timeslot import RecurringTimeslot
 from Storage import Storage
+import logging
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Checks if there are shifts available on hungry.dk',
@@ -31,21 +32,24 @@ if __name__ == "__main__":
 
     # set up logging
     if args.debug:
-        import logging
         logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+    logging.info("Starting the script")
 
     # Notifications
     appriseObj = apprise.Apprise()
     if appriseObj.add(args.notify) is False:
+        logging.info("Failed to parse apprise notification URL. Exiting...")
         raise Exception("The given Apprise notification URL is invalid. ")
 
-    # Hungry
+    # Hungry API
     hungry = HungryAPI(args.email, args.password, args.id)
 
-    # Storage
+    # Storage for timeslots, previously found shifts, login token
     storage = Storage()
 
-    # if no recurring timeslots and take shifts is enabled, confirm that the user wants to continue
+    # if no recurring timeslots are present, and take shifts is enabled -> confirm action
     if args.auto_take and len(storage.recurringTimeslots) == 0:
         print("No recurring timeslots are set and auto-take is enabled. Do you want to continue? [y/n]")
         if input().lower() != "y":
@@ -53,8 +57,7 @@ if __name__ == "__main__":
 
     # Load timeslots from storage
     if len(storage.recurring_timeslots) == 0:
-        print("No timeslots found. Creating a default one that covers everything")
-        # Create a recurring timeslot that covers all days of week, all hours, and all shift lengths
+        logging.info("No timeslots found. Creating a default one that covers everything")
         # days of week
         days_of_week = [0, 1, 2, 3, 4, 5, 6]
         # start and end time
@@ -69,18 +72,21 @@ if __name__ == "__main__":
         storage.add_recurring_timeslot(timeslot)
 
     # Run once or every args.frequency seconds
-    print("Starting the script...")
+    logging.debug("Starting the main part of the script")
     while True:
-        # Get shifts
+        # Get shifts from API
         shifts = hungry.get_shifts()
+        logging.debug(f"Got {len(shifts)} shifts from API")
 
-        # Read saved shifts from storage
+        # Read previously retrieved shifts from storage
         saved_shifts = storage.get_shifts()
+        logging.debug(f"Got {len(saved_shifts)} shifts from storage")
 
-        # Find shifts that are not saved
+        # Identify unique shifts
         new_shifts = [shift for shift in shifts if shift not in saved_shifts]
+        logging.debug(f"Found {len(new_shifts)} unique shifts")
 
-        # Save shifts to storage
+        # Save all retrieved shifts to storage
         storage.save_shifts(shifts)
 
         # Get shifts that satisfy the user specified timeslots
@@ -89,26 +95,26 @@ if __name__ == "__main__":
             for shift in new_shifts:
                 if timeslot.is_valid_shift(shift.start, shift.end):
                     valid_shifts.add(shift)
+        logging.debug(f"Retrieved timeslots: {storage.recurring_timeslots}")
+        logging.debug(f"Identified {len(valid_shifts)} valid shifts")
 
-        # Take shifts
+        # Automatically take shifts, if enabled
         if args.auto_take:
             for shift in valid_shifts:
-                print(f"Taking shift {shift.start} - {shift.end}")
+                logging.info(f"Taking shift {shift}")
 
                 # Take the shift
                 hungry.take_shift(shift)
+                logging.debug(f"Shift taken")
 
-        # Notify if a valid shift is found
+        # Notify user if a valid shift(s) is found
         if len(valid_shifts) > 0:
-            # print that shifts were found or taken depending on the auto-take flag
-            if args.auto_take:
-                print(f"{len(valid_shifts)} shifts were taken.")
-            else:
-                print(f"{len(valid_shifts)} shifts were found.")
-            shifts_repr: str = '\n'.join(str(s) for s in shifts)
-            print(shifts_repr)
-            appriseObj.notify(body=shifts_repr, title=f"{len(shifts)} new shifts found!")
+            title: str = f"{len(valid_shifts)} shifts were " + ('found.' if args.auto_take else 'procured.')
+            body: str = '\n'.join(str(s) for s in shifts)
+            appriseObj.notify(body=body, title=title)
+        else:
+            logging.info("No shifts found")
         if args.frequency is None:
             break
         time.sleep(args.frequency)
-    print("Done!")
+    logging.info("Script finished")
