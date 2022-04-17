@@ -134,7 +134,10 @@ class Storage(metaclass=Singleton):
         # deserialize json and load from file if exists
         try:
             with open(self.directory + 'recurring_timeslots.json', 'r') as f:
-                return [RecurringTimeslot.deserialize(ts) for ts in json.load(f)]
+                try:
+                    return [RecurringTimeslot.deserialize(ts) for ts in json.load(f)]
+                except json.decoder.JSONDecodeError:
+                    return []
         except FileNotFoundError:
             return []
 
@@ -144,7 +147,10 @@ class Storage(metaclass=Singleton):
     def _load_shifts(self):
         try:
             with open(self.directory + 'shifts.json', 'r') as f:
-                return [Shift.deserialize(s) for s in json.load(f)]
+                try:
+                    return [Shift.deserialize(s) for s in json.load(f)]
+                except json.decoder.JSONDecodeError:
+                    return []
         except FileNotFoundError:
             return []
 
@@ -159,7 +165,10 @@ class Storage(metaclass=Singleton):
     def _load_token_and_cityid(self):
         try:
             with open(self.directory + 'token.json', 'r') as f:
-                json_file = json.load(f)
-                return json_file['token'], json_file['expires'], json_file['city_id']
+                try:
+                    json_file = json.load(f)
+                    return json_file['token'], json_file['expires'], json_file['city_id']
+                except json.decoder.JSONDecodeError:
+                    return None, None, None
         except FileNotFoundError:
             return None, None, None
