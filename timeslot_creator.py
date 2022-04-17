@@ -2,36 +2,55 @@ from hungry.timeslot import RecurringTimeslot
 from hungry.Storage import Storage
 from datetime import datetime
 
+
 # Add new timeslot
 def create_timeslot(storage):
 
-    # Allow user to input days of the week such as Monday, Tuesday, etc.
-    days_of_the_week = input("Enter days of the week separated by commas: ")
-    # Use Timeslot.day_name_to_int for each day to convert the user input to a list of integers
-    days_of_the_week = [RecurringTimeslot._day_name_to_int(day) for day in days_of_the_week.split(',')]
+    success = False
+    while not success:
+        try:
+            # Allow user to input days of the week such as Monday, Tuesday, etc.
+            days_of_the_week = input("Enter days of the week separated by commas (Monday, Wednesday...): ")
+            # Use Timeslot.day_name_to_int for each day to convert the user input to a list of integers
+            days_of_the_week = [RecurringTimeslot._day_name_to_int(day) for day in days_of_the_week.split(',')]
+            success = True
+        except KeyError:
+            print("Invalid day of the week. Please enter full day names e.g.: Monday, Wednesday, Friday")
+            continue
+        except KeyboardInterrupt:
+            return
 
-    # Allow user to input start and end times
-    try:
-        start_time = input("Enter start time: ")
-        start_time = datetime.strptime(start_time, '%H:%M')
-        end_time = input("Enter end time: ")
-        end_time = datetime.strptime(end_time, '%H:%M')
-    except ValueError:
-        print("Invalid time format. Please use HH:MM")
-        exit()
+    success = False
+    while not success:
+        # Allow user to input start and end times
+        try:
+            start_time = input("Enter start time: ")
+            start_time = datetime.strptime(start_time, '%H:%M')
+            end_time = input("Enter end time: ")
+            end_time = datetime.strptime(end_time, '%H:%M')
+            success = True
+        except ValueError:
+            print("Invalid time format. Please use HH:MM\n")
+            continue
+        except KeyboardInterrupt:
+            return
 
-    # Get minimum shift length duration:
-    try:
-        min_shift_length = int(input("Enter minimum shift length in minutes: "))
-    except ValueError:
-        print("Invalid input. Please enter a number.")
-        exit()
-    if min_shift_length < 0:
-        raise ValueError("Min duration must be greater than 0")
-
-    # If minimum shift length is greater than the difference between start and end times, raise error
-    if (end_time - start_time).seconds < min_shift_length * 60:
-        raise ValueError("Min duration must be less than the difference between start and end times")
+    success = False
+    while not success:
+        # Get minimum shift length duration:
+        try:
+            min_shift_length = int(input("Enter minimum shift length in minutes: "))
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+            continue
+        if min_shift_length < 0:
+            print("Invalid input. Please enter a positive number.")
+            continue
+        # If minimum shift length is greater than the difference between start and end times
+        if (end_time - start_time).seconds < min_shift_length * 60:
+            print("Min duration must be less than the difference between start and end times")
+            continue
+        success = True
 
     # Create a new recurring timeslot
     return RecurringTimeslot(days_of_the_week, start_time.time(), end_time.time(), min_shift_length)
