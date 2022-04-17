@@ -74,47 +74,59 @@ if __name__ == "__main__":
     # Run once or every args.frequency seconds
     logging.debug("Starting the main part of the script")
     while True:
-        # Get shifts from API
-        shifts = hungry.get_shifts()
-        logging.debug(f"Got {len(shifts)} shifts from API")
+        try:
+            # Get shifts from API
+            shifts = hungry.get_shifts()
+            logging.debug(f"Got {len(shifts)} shifts from API")
 
-        # Read previously retrieved shifts from storage
-        saved_shifts = storage.get_shifts()
-        logging.debug(f"Got {len(saved_shifts)} shifts from storage")
+            # Read previously retrieved shifts from storage
+            saved_shifts = storage.get_shifts()
+            logging.debug(f"Got {len(saved_shifts)} shifts from storage")
 
-        # Identify unique shifts
-        new_shifts = [shift for shift in shifts if shift not in saved_shifts]
-        logging.debug(f"Found {len(new_shifts)} unique shifts")
+            # Identify unique shifts
+            new_shifts = [shift for shift in shifts if shift not in saved_shifts]
+            logging.debug(f"Found {len(new_shifts)} unique shifts")
 
-        # Save all retrieved shifts to storage
-        storage.save_shifts(shifts)
+            # Save all retrieved shifts to storage
+            storage.save_shifts(shifts)
 
-        # Get shifts that satisfy the user specified timeslots
-        valid_shifts = set()
-        for timeslot in storage.recurring_timeslots:
-            for shift in new_shifts:
-                if timeslot.is_valid_shift(shift.start, shift.end):
-                    valid_shifts.add(shift)
-        logging.debug(f"Retrieved timeslots: {storage.recurring_timeslots}")
-        logging.debug(f"Identified {len(valid_shifts)} valid shifts")
+            # Get shifts that satisfy the user specified timeslots
+            valid_shifts = set()
+            for timeslot in storage.recurring_timeslots:
+                for shift in new_shifts:
+                    if timeslot.is_valid_shift(shift.start, shift.end):
+                        valid_shifts.add(shift)
+            logging.debug(f"Retrieved timeslots: {storage.recurring_timeslots}")
+            logging.debug(f"Identified {len(valid_shifts)} valid shifts")
 
-        # Automatically take shifts, if enabled
-        if args.auto_take:
-            for shift in valid_shifts:
-                logging.info(f"Taking shift {shift}")
+            # Automatically take shifts, if enabled
+            if args.auto_take:
+                for shift in valid_shifts:
+                    logging.info(f"Taking shift {shift}")
 
-                # Take the shift
-                hungry.take_shift(shift)
-                logging.debug(f"Shift taken")
+                    # Take the shift
+                    hungry.take_shift(shift)
+                    logging.debug(f"Shift taken")
 
-        # Notify user if a valid shift(s) is found
-        if len(valid_shifts) > 0:
-            title: str = f"{len(valid_shifts)} shifts were " + ('found.' if args.auto_take else 'procured.')
-            body: str = '\n'.join(str(s) for s in shifts)
-            appriseObj.notify(body=body, title=title)
+            # Notify user if a valid shift(s) is found
+            if len(valid_shifts) > 0:
+                title: str = f"{len(valid_shifts)} shifts were " + ('found.' if args.auto_take else 'procured.')
+                body: str = '\n'.join(str(s) for s in shifts)
+                appriseObj.notify(body=body, title=title)
+            else:
+                logging.info("No shifts found")
+            if args.frequency is None:
+                break
+            logging.info("Script finished")
+
+        except Exception as e:
+            logging.error(f"Error: {e}")
+            try:
+                appriseObj.notify(body=str(e), title="Hungry-Shift-Helper error")
+            except Exception as e:
+                logging.error(f"Error: {e}")
+        # sleep
+        if args.frequency:
+            time.sleep(args.frequency)
         else:
-            logging.info("No shifts found")
-        if args.frequency is None:
             break
-        time.sleep(args.frequency)
-    logging.info("Script finished")
