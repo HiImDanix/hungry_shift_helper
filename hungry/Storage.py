@@ -1,12 +1,13 @@
 import json
 import os
-from datetime import datetime
 
-from shift import Shift
-from timeslot import RecurringTimeslot
+from hungry.shift import Shift
+from hungry.timeslot import RecurringTimeslot
+
 
 class Singleton(type):
     _instances = {}
+
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)

@@ -1,5 +1,5 @@
-from timeslot import RecurringTimeslot
-from Storage import Storage
+from hungry.timeslot import RecurringTimeslot
+from hungry.Storage import Storage
 from datetime import datetime
 
 # Add new timeslot

@@ -1,19 +1,12 @@
 import argparse
-import json
-import pathlib
-from dataclasses import dataclass
-from datetime import datetime, timedelta
-from typing import Set
-from functools import singledispatch
+from datetime import datetime
 
 import apprise
-import requests
 import time
 
-from hungryAPI import HungryAPI
-from shift import Shift
-from timeslot import RecurringTimeslot
-from Storage import Storage
+from hungry.hungryAPI import HungryAPI
+from hungry.timeslot import RecurringTimeslot
+from hungry.Storage import Storage
 import logging
 
 if __name__ == "__main__":
@@ -23,10 +16,11 @@ if __name__ == "__main__":
     parser.add_argument("password", help="Your hungry.dk password", type=str)
     parser.add_argument("id", help="Your hungry.dk employee ID (see app -> my profile)", type=int)
     parser.add_argument("notify", help="Apprise notification URL")
-    parser.add_argument("--auto-take", help="Automatically take shifts that the chosen timeslots", action="store_true",
+    parser.add_argument("--auto-take", help="Automatically take shifts (that fit your chosen timeslots)",
+                        action="store_true",
                         default=False)
     parser.add_argument("-d", "--debug", help="Enable debug mode", action="store_true")
-    parser.add_argument("-f", "--frequency", help="Executes the script every <seconds> (use CRON instead!)",
+    parser.add_argument("-f", "--frequency", help="Executes the script every <seconds>",
                         metavar="seconds", type=int)
     args = parser.parse_args()
 

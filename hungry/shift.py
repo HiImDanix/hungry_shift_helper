@@ -2,6 +2,20 @@ from datetime import datetime
 
 
 class Shift():
+    '''
+    This class represents a shift that a user can take to work.
+    The data for the shifts is retrieved from Hungry's API
+
+    Attributes:
+        id (int): The shift's unique ID
+        start (datetime): The time that the shift starts at
+        end (datetime): The time that the shift ends at
+        status (str): Represents the type of shift (swap, assigned, unassigned)
+        time_zone (str): The time zone for start and end times
+        starting_point_id (int): The id of the starting point for the shift
+        starting_point_name (str): The name of the starting point for the shift
+
+    '''
     def __init__(self, id: int, start: datetime, end: datetime, status: str,
                  time_zone: str, starting_point_id: int, starting_point_name: str):
         self.id = id

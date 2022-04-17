@@ -1,17 +1,11 @@
-import argparse
-import json
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Set
-from functools import singledispatch
 
-import apprise
 import requests
 import time
 
-from Storage import Storage
-from shift import Shift
-from timeslot import RecurringTimeslot
+from hungry.Storage import Storage
+from hungry.shift import Shift
 
 
 class HungryAPI:
@@ -28,8 +22,7 @@ class HungryAPI:
 
     ''''
     The HungryAPI class is responsible for handling the communication with the Hungry API.
-    It uses the undocumented usehurrier API to authenticate and retrieve data.
-    Notifications are handled by Apprise.
+    It uses the undocumented usehurrier.com API to authenticate and retrieve data.
     
     Args:
         username (str): The username to use for authentication
@@ -179,10 +172,13 @@ class HungryAPI:
             shift_objects.add(shift)
         return shift_objects
 
-'''
-A wrapper around requests auth class that allows to use Bearer token for communication with the Hungry API
-'''#
+
 class BearerAuth(requests.auth.AuthBase):
+    """
+    A wrapper around requests auth class that allows to use Bearer token for communication with the Hungry API
+
+    :param token: Bearer token
+    """
     def __init__(self, token: str):
         self.token: str = token
 
