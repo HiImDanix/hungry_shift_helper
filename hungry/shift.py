@@ -10,7 +10,7 @@ class Shift():
         id (int): The shift's unique ID
         start (datetime): The time that the shift starts at
         end (datetime): The time that the shift ends at
-        status (str): Represents the type of shift (swap, assigned, unassigned)
+        status (str): Represents the type of shift (PENDING for a swap, UNASSIGNED for unassigned, ASSIGNED for taken)
         time_zone (str): The time zone for start and end times
         starting_point_id (int): The id of the starting point for the shift
         starting_point_name (str): The name of the starting point for the shift

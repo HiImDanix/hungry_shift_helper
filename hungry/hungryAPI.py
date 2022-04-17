@@ -135,10 +135,8 @@ class HungryAPI:
         resp.raise_for_status()
 
     def _take_unassigned_shift(self, shift: Shift):
-        raise NotImplementedError("Not implemented yet")
-        # url_take_unassigned = self.URL_TAKE_UNASSIGNED.format(shift.id)
-        # resp = requests.post(url_take_unassigned, auth=BearerAuth(self.token))
-        # resp.raise_for_status()
+        # TODO: Implement
+        pass
 
 
     '''
