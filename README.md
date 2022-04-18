@@ -1,2 +1,72 @@
-# Hungry-Shift-Helper
-a CLI app that automatically notifies you when there's a shift available for hungry.dk riders
+
+![Logo](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/th5xamgrr6se0x5ro4g6.png)
+
+
+# Hungry Shift Helper [![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-yellow.svg)](https://opensource.org/licenses/) [![stability-experimental](https://img.shields.io/badge/stability-experimental-orange.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#experimental)
+
+a CLI app that automatically notifies you on Discord, Slack, Telegram etc. when there's a shift available for https://hungry.dk riders. \
+Just specify your timeslots, and leave it running 24/7.
+
+
+
+
+## Why?
+
+On February 27th, Hungry decided to make changes for riders working for them with an international student contract. They decided that from the day onwards, you have to call them every Monday 09:00-18:00 to secure the shifts for the next week.\
+\
+On top of that, they considerably reduced the amount of shifts available for taking.\
+\
+One day, I forgot to call. I needed those hours. However, I knew that every know and then a fellow rider wants to swap a shift. To take use of this, you have to monitor their app 24/7.\
+\
+And so - 'I can make a script for that', I thought.
+## Features
+
+- Specify your preferred timeslots
+- Get notified when a shift is available on 70+ services with [Apprise](https://github.com/caronc/apprise/wiki)
+- Leave running 24/7
+- ~~Automatically take shifts~~ (only swappable shifts for now)
+
+## Installation
+
+Clone the repository
+
+```bash
+https://github.com/HiImDanix/Hungry-Shift-Helper.git && cd Hungry-Shift-Helper/
+```
+    
+Install dependencies
+```
+pip install -r requirements.txt
+```
+
+## Get started
+
+Set up your preferred timeslots for when you want to work
+```
+python timeslot_creator.py
+```
+
+or Linux:
+```
+python3 timeslot_creator.py
+```
+
+Run the main script with *email, password, employeeID, appriseURL* as the arguments
+```
+python hungry.py email@email.com password 11111 discord://webhook_id/webhook_token
+```
+
+Make it run 24/7, every 30 seconds
+```
+python hungry.py email@email.com password 11111 discord://webhook_id/webhook_token -f 30
+```
+Recommendation: Use cron on Linux and Task Scheduler on Windows instead of using the the -f / --frequency argument, to not have to leave the script running.
+## Available arguments
+## Screenshots
+
+![Timeslot screenshot](https://i.imgur.com/Y5jZWd1.png)
+
+![Help screenshot](https://i.imgur.com/6ixhftU.png)
+
+![Notification screenshot](https://i.imgur.com/jprRQL9.png)
+
