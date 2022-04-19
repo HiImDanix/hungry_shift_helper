@@ -62,6 +62,24 @@ python hungry.py email@email.com password 11111 discord://webhook_id/webhook_tok
 ```
 Recommendation: Use cron on Linux and Task Scheduler on Windows instead of using the the -f / --frequency argument, to not have to leave the script running.
 ## Available arguments
+
+**Required**
+Argument | Description
+--- | ---
+1.`email`  | Your hungry.dk email.
+2.`password`  | Your hungry.dk password.
+3.`id`  | Your hungry.dk employee ID (see app -> my profile).
+4.`notify`  | An [Apprise notification URL](https://github.com/caronc/apprise/wiki).
+
+**Optional**
+
+Short | Long | Description
+--- | ---  | ---
+`-h`  | `--help` | Shows a help message and exits.
+ \- | `--auto-take` | Automatically takes shifts (that fit your chosen timeslots).
+`-f <seconds>`  | `--frequency <seconds>` | Executes the script continuously every <seconds>.
+`-d`  | `--debug` | Enables debug mode.
+
 ## Screenshots
 
 ![Timeslot screenshot](https://i.imgur.com/Y5jZWd1.png)
