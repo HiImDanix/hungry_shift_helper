@@ -1,10 +1,11 @@
 from datetime import datetime
 
 
-class Shift():
-    '''
-    This class represents a shift that a user can take to work.
-    The data for the shifts is retrieved from Hungry's API
+class Shift:
+    """ Represents a shift that a user can choose to work.
+
+    The data for the shifts is retrieved from an undocumented Hungry's API which is prone to changes.
+    However, the API does seem to have major versioning (v1, v2, v3) in the URL.
 
     Attributes:
         id (int): The shift's unique ID
@@ -15,7 +16,8 @@ class Shift():
         starting_point_id (int): The id of the starting point for the shift
         starting_point_name (str): The name of the starting point for the shift
 
-    '''
+    """
+
     def __init__(self, id: int, start: datetime, end: datetime, status: str,
                  time_zone: str, starting_point_id: int, starting_point_name: str):
         self.id = id
@@ -38,6 +40,13 @@ class Shift():
     note: It assumes that start end happen on the same day
     '''
     def __str__(self):
+        """ Returns a string representation of the shift object.
+
+        The representation is in the format of:
+        February 4, 14:00-16:00 (2h 30 minutes)
+
+        Note: It assumes that start end happen on the same day
+        """
         return "{} {} from {} ({}h {}m)".format(
             self.start.strftime("%B"),
             self.start.day,
@@ -52,8 +61,8 @@ class Shift():
     def __hash__(self):
         return hash(self.id)
 
-    # serialize
     def serialize(self):
+        """ Returns a dictionary representation of the shift object. """
         return {
             "id": self.id,
             "start": self.start.isoformat(),
@@ -64,9 +73,9 @@ class Shift():
             "starting_point_name": self.starting_point_name
         }
 
-    # deserialize
     @staticmethod
     def deserialize(json_data):
+        """ Returns a Shift object from a dictionary representation of the shift object. """
         return Shift(
             json_data["id"],
             datetime.fromisoformat(json_data["start"]),
@@ -76,4 +85,3 @@ class Shift():
             json_data["starting_point_id"],
             json_data["starting_point_name"]
         )
-

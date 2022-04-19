@@ -1,15 +1,18 @@
 import argparse
 from datetime import datetime
+from typing import List, Dict, Set
 
 import apprise
 import time
 
 from hungry.hungryAPI import HungryAPI
+from hungry.shift import Shift
 from hungry.timeslot import RecurringTimeslot
 from hungry.Storage import Storage
 import logging
 
-if __name__ == "__main__":
+
+def main():
     parser = argparse.ArgumentParser(description='Checks if there are shifts available on hungry.dk',
                                      epilog='Good luck in your shift search! :)')
     parser.add_argument("email", help="Your hungry.dk email", type=str)
@@ -32,16 +35,16 @@ if __name__ == "__main__":
     logging.info("Starting the script")
 
     # Notifications
-    appriseObj = apprise.Apprise()
+    appriseObj: apprise.Apprise = apprise.Apprise()
     if appriseObj.add(args.notify) is False:
         logging.info("Failed to parse apprise notification URL. Exiting...")
         raise Exception("The given Apprise notification URL is invalid. ")
 
     # Hungry API
-    hungry = HungryAPI(args.email, args.password, args.id)
+    hungry: HungryAPI = HungryAPI(args.email, args.password, args.id)
 
     # Storage for timeslots, previously found shifts, login token
-    storage = Storage()
+    storage: Storage = Storage()
 
     # if no recurring timeslots are present, and take shifts is enabled -> confirm action
     if args.auto_take and len(storage.recurringTimeslots) == 0:
@@ -52,17 +55,8 @@ if __name__ == "__main__":
     # Load timeslots from storage
     if len(storage.recurring_timeslots) == 0:
         logging.info("No timeslots found. Creating a default one that covers everything")
-        # days of week
-        days_of_week = [0, 1, 2, 3, 4, 5, 6]
-        # start and end time
-        start = datetime.strptime("00:00", "%H:%M")
-        end = datetime.strptime("23:59", "%H:%M")
-        # min shift length (minutes)
-        shift_length = 0
-        # create a recurring timeslot
-        timeslot = RecurringTimeslot(days_of_week, start.time(), end.time(), shift_length)
-
-        # add the timeslot to the storage
+        # timeslot that covers all days and times
+        timeslot: RecurringTimeslot = get_eternal_timeslot()
         storage.add_recurring_timeslot(timeslot)
 
     # Run once or every args.frequency seconds
@@ -70,22 +64,25 @@ if __name__ == "__main__":
     while True:
         try:
             # Get shifts from API
-            shifts = hungry.get_shifts()
+            shifts: Set[Shift] = hungry.get_shifts()
             logging.debug(f"Got {len(shifts)} shifts from API")
+            # show the shifts in debug
+            for shift in shifts:
+                logging.debug(f"Shift: {shift}")
 
             # Read previously retrieved shifts from storage
-            saved_shifts = storage.get_shifts()
+            saved_shifts: List[Shift] = storage.get_shifts()
             logging.debug(f"Got {len(saved_shifts)} shifts from storage")
 
             # Identify unique shifts
-            new_shifts = [shift for shift in shifts if shift not in saved_shifts]
+            new_shifts: List[Shift] = [shift for shift in shifts if shift not in saved_shifts]
             logging.debug(f"Found {len(new_shifts)} unique shifts")
 
             # Save all retrieved shifts to storage
             storage.save_shifts(shifts)
 
             # Get shifts that satisfy the user specified timeslots
-            valid_shifts = set()
+            valid_shifts: Set = set()
             for timeslot in storage.recurring_timeslots:
                 for shift in new_shifts:
                     if timeslot.is_valid_shift(shift.start, shift.end):
@@ -124,3 +121,20 @@ if __name__ == "__main__":
             time.sleep(args.frequency)
         else:
             break
+
+
+if __name__ == "__main__":
+    main()
+
+
+def get_eternal_timeslot() -> RecurringTimeslot:
+    """ Returns a RecurringTimeslot object that covers all dates and times"""
+    # days of week
+    days_of_week: List = [0, 1, 2, 3, 4, 5, 6]
+    # start and end time
+    start: datetime = datetime.strptime("00:00", "%H:%M")
+    end: datetime = datetime.strptime("23:59", "%H:%M")
+    # min shift length (minutes)
+    shift_length: int = 0
+    # return a recurring timeslot
+    return RecurringTimeslot(days_of_week, start.time(), end.time(), shift_length)

@@ -3,8 +3,70 @@ from hungry.Storage import Storage
 from datetime import datetime
 
 
-# Add new timeslot
-def create_timeslot(storage):
+def main():
+    """ Allows the user to specify preferred recurring timeslots. """
+
+    storage: Storage = Storage()
+
+    while True:
+        print("-" * 80)
+        print("\nCurrent timeslots:")
+        for i, timeslot in enumerate(storage.recurring_timeslots):
+            print(f"{i + 1}. {timeslot}")
+        print("\nOptions:")
+        print("1. Add new timeslot")
+        print("2. Delete a timeslot by its number")
+        print("3. Exit")
+
+        # Get user input
+        try:
+            user_input: int = int(input("\nEnter option: "))
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+            continue
+
+        # Add new timeslot
+        if user_input == 1:
+            try:
+                storage.add_recurring_timeslot(create_timeslot(storage))
+            except ValueError as e:
+                print(e)
+                continue
+            print("Timeslot added successfully")
+        # Delete a timeslot by its number
+        elif user_input == 2:
+            try:
+                # Get timeslot number
+                timeslot_number: int = int(input("Enter timeslot to delete: "))
+
+                # try to get timeslot object
+                try:
+                    timeslot: RecurringTimeslot = storage.recurring_timeslots[timeslot_number - 1]
+                except IndexError:
+                    print("Invalid timeslot number")
+                    continue
+                # Delete timeslot
+                storage.delete_recurring_timeslot(timeslot)
+            except ValueError:
+                print("Invalid input. Please enter a number.")
+                continue
+            print("Timeslot deleted successfully")
+        # Exit
+        elif user_input == 3:
+            break
+        else:
+            print("Invalid input. Please choose an option from the list.")
+            continue
+    print("Exiting...")
+    exit()
+
+
+def create_timeslot():
+    """ Asks the user for details to create a RecurringTimeslot object.
+
+    Returns:
+        RecurringTimeslot: The RecurringTimeslot object created.
+    """
 
     success = False
     while not success:
@@ -57,60 +119,4 @@ def create_timeslot(storage):
 
 
 if __name__ == '__main__':
-    storage = Storage()
-
-    while True:
-        print("-" * 80)
-        print("\nCurrent timeslots:")
-        for i, timeslot in enumerate(storage.recurring_timeslots):
-            print(f"{i + 1}. {timeslot}")
-        print("\nOptions:")
-        print("1. Add new timeslot")
-        print("2. Delete a timeslot by its number")
-        print("3. Exit")
-
-        # Get user input
-        try:
-            user_input = int(input("\nEnter option: "))
-        except ValueError:
-            print("Invalid input. Please enter a number.")
-            continue
-
-        # Add new timeslot
-        if user_input == 1:
-            try:
-                storage.add_recurring_timeslot(create_timeslot(storage))
-            except ValueError as e:
-                print(e)
-                continue
-            print("Timeslot added successfully")
-        # Delete a timeslot by its number
-        elif user_input == 2:
-            try:
-                # Get timeslot number
-                timeslot_number = int(input("Enter timeslot to delete: "))
-
-                # try to get timeslot object
-                try:
-                    timeslot = storage.recurring_timeslots[timeslot_number - 1]
-                except IndexError:
-                    print("Invalid timeslot number")
-                    continue
-                # Delete timeslot
-                storage.delete_recurring_timeslot(timeslot)
-            except ValueError:
-                print("Invalid input. Please enter a number.")
-                continue
-            print("Timeslot deleted successfully")
-        # Exit
-        elif user_input == 3:
-            break
-        else:
-            print("Invalid input. Please choose an option from the list.")
-            continue
-    print("Exiting...")
-    exit()
-
-
-
-
+    main()

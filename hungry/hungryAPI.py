@@ -9,6 +9,16 @@ from hungry.shift import Shift
 
 
 class HungryAPI:
+    """ A class for communicating with the Hungry Api.
+
+    The HungryAPI class is responsible for handling the communication with the Hungry API.
+    It uses the undocumented usehurrier.com API to authenticate and retrieve data.
+
+    Args:
+        email (str): The email to use for authentication
+        password (str): The password to use for authentication
+        employee_id (str): The employee id found in the Roadrunner app -> my profile -> id
+    """
     TIMEZONE = "Europe/Copenhagen"
     # get latest app version URL
     APP_VERSION_DOMAIN: str = "https://api.appcenter.ms/v0.1/public/sdk/apps/91607026-b44d-46a9-86f9-7d59d86e3105/releases/latest"
@@ -20,15 +30,6 @@ class HungryAPI:
     app_version: int = 291
     app_short_version: str = "v3.2209.4"
 
-    ''''
-    The HungryAPI class is responsible for handling the communication with the Hungry API.
-    It uses the undocumented usehurrier.com API to authenticate and retrieve data.
-    
-    Args:
-        username (str): The username to use for authentication
-        password (str): The password to use for authentication
-        employee_id (str): The employee id found in the Roadrunner app -> my profile -> id
-    '''
     def __init__(self, email: str, password: str, employee_id: int):
         self.EMAIL: str = email
         self.PASSWORD: str = password
@@ -57,19 +58,21 @@ class HungryAPI:
             resp_json = resp.json()
             # set token and expiration
             Storage().save_token_and_cityid(resp_json["token"], time.time() + HungryAPI.TOKEN_EXPIRY_SECONDS, resp_json["city_id"])
-        except Exception as e:
+        except Exception:
             raise Exception("Failed to authenticate! Wrong credentials?")
 
-    '''
-    Returns the app version and short app version
-    For example:
-        (291, "v3.2209.4")
-    
-    Returns:
-        int, str: app version and short app version
-    '''
     @staticmethod
     def _get_app_version() -> (int, str):
+        """ Returns a tuple of (app_version, app_short_version).
+
+        For example:
+            (291, "v3.2209.4")
+        In case of failure, fallback values are returned.
+
+        Returns:
+            int, str: app version and short app version
+        """
+
         # fallback version
         version = 291
         short_version = "v3.2209.4"
@@ -89,10 +92,8 @@ class HungryAPI:
         # return version and short version
         return int(resp_json["version"]), resp_json["short_version"]
 
-    '''
-    A decorator for refreshing the token if it is expired
-    '''
     def refresh_token(decorated):
+        """ A decorator for refreshing the token if it is expired. """
         def wrapper(api, *args, **kwargs):
             storage = Storage()
             if storage.token_expiration is None or time.time() > storage.token_expiration:
@@ -122,6 +123,12 @@ class HungryAPI:
 
     # function to automatically take a shift
     def take_shift(self, shift: Shift):
+        """ Takes a shift, automatically.
+
+        Args:
+            shift (Shift): shift to take
+
+        """
         if shift.status == "PENDING":
             self._take_swap_shift(shift)
         elif shift.status == "UNASSIGNED":
@@ -138,44 +145,43 @@ class HungryAPI:
         # TODO: Implement
         pass
 
-
-    '''
-    Parameters for requests for shifts
-    '''
     def __get_params(self) -> dict:
+        """ Returns a dictionary of parameters for the GET request for getting shifts. """
         return {"start_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                  "end_at": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                  "city_id": Storage().city_id,
-                  "with_time_zone": HungryAPI.TIMEZONE
-                  }
+                "end_at": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "city_id": Storage().city_id,
+                "with_time_zone": HungryAPI.TIMEZONE
+                }
 
-    '''
-    Converts a response from the server to a set of shift objects
-    
-    :param resp: response from the server as json
-    :return: set of shifts
-    '''
     @staticmethod
     def _resp_to_shifts(shifts: list) -> Set[Shift]:
+        """ Converts a list of dictionary represented shifts to a set of Shift objects.
+
+        Args:
+            shifts: response from the server as json
+
+        Returns:
+            Set[Shift]: set of shifts
+        """
         shift_objects = set()
         for shift in shifts:
-            id = shift["shift_id"]
+            shift_id = shift["shift_id"]
             start = datetime.strptime(shift["start"], "%Y-%m-%dT%H:%M:%S")
             end = datetime.strptime(shift["end"], "%Y-%m-%dT%H:%M:%S")
             status = shift["status"]
             time_zone = shift["time_zone"]
             starting_point_id = shift["starting_point_id"]
             starting_point_name = shift["starting_point_name"]
-            shift = Shift(id, start, end, status, time_zone, starting_point_id, starting_point_name)
+            shift = Shift(shift_id, start, end, status, time_zone, starting_point_id, starting_point_name)
             shift_objects.add(shift)
         return shift_objects
 
 
 class BearerAuth(requests.auth.AuthBase):
-    """
-    A wrapper around requests auth class that allows to use Bearer token for communication with the Hungry API
+    """ A wrapper around requests auth class for using Bearer token to communication with the Hungry API.
 
-    :param token: Bearer token
+    Returns:
+        requests.auth.AuthBase: the auth class
     """
     def __init__(self, token: str):
         self.token: str = token
@@ -183,4 +189,3 @@ class BearerAuth(requests.auth.AuthBase):
     def __call__(self, r):
         r.headers["authorization"] = "Bearer " + self.token
         return r
-
