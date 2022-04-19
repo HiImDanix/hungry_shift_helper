@@ -31,7 +31,7 @@ And so - 'I can make a script for that', I thought.
 Clone the repository
 
 ```bash
-https://github.com/HiImDanix/Hungry-Shift-Helper.git && cd Hungry-Shift-Helper/
+https://github.com/HiImDanix/hungry_shift_helper.git && cd hungry_shift_helper/
 ```
     
 Install dependencies
