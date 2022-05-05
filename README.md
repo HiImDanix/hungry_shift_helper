@@ -16,7 +16,7 @@ On February 27th, Hungry decided to make changes for riders working for them wit
 \
 On top of that, they considerably reduced the amount of shifts available for taking.\
 \
-One day, I forgot to call. I needed those hours. However, I knew that every know and then a fellow rider wants to swap a shift. To take use of this, you have to monitor their app 24/7.\
+One day, I forgot to call. I needed those hours. However, I knew that every now and then a fellow rider wants to swap a shift. To take use of this, you have to monitor their app 24/7.\
 \
 And so - 'I can make a script for that', I thought.
 ## Features
