@@ -101,7 +101,7 @@ def main():
 
             # Notify user if a valid shift(s) is found
             if len(valid_shifts) > 0:
-                title: str = f"{len(valid_shifts)} shifts were " + ('found.' if args.auto_take else 'procured.')
+                title: str = f"{len(valid_shifts)} shifts were " + ('procured.' if args.auto_take else 'found.')
                 body: str = '\n'.join(str(s) for s in shifts)
                 appriseObj.notify(body=body, title=title)
             else:
@@ -121,6 +121,7 @@ def main():
             time.sleep(args.frequency)
         else:
             break
+
 
 def get_eternal_timeslot() -> RecurringTimeslot:
     """ Returns a RecurringTimeslot object that covers all dates and times"""
