@@ -122,11 +122,6 @@ def main():
         else:
             break
 
-
-if __name__ == "__main__":
-    main()
-
-
 def get_eternal_timeslot() -> RecurringTimeslot:
     """ Returns a RecurringTimeslot object that covers all dates and times"""
     # days of week
@@ -138,3 +133,9 @@ def get_eternal_timeslot() -> RecurringTimeslot:
     shift_length: int = 0
     # return a recurring timeslot
     return RecurringTimeslot(days_of_week, start.time(), end.time(), shift_length)
+
+if __name__ == "__main__":
+    main()
+
+
+
