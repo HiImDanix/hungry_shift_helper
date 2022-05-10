@@ -53,12 +53,12 @@ python3 timeslot_creator.py
 
 Run the main script with *email, password, employeeID, appriseURL* as the arguments
 ```
-python hungry.py email@email.com password 11111 discord://webhook_id/webhook_token
+python run.py email@email.com password 11111 discord://webhook_id/webhook_token
 ```
 
 Make it run 24/7, every 30 seconds
 ```
-python hungry.py email@email.com password 11111 discord://webhook_id/webhook_token -f 30
+python run.py email@email.com password 11111 discord://webhook_id/webhook_token -f 30
 ```
 Recommendation: Use cron on Linux and Task Scheduler on Windows instead of using the the -f / --frequency argument, to not have to leave the script running.
 ## Available arguments
