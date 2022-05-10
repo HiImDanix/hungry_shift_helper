@@ -16,7 +16,7 @@ On February 27th, Hungry decided to make changes for riders working for them wit
 \
 On top of that, they considerably reduced the amount of shifts available for taking.\
 \
-One day, I forgot to call. I needed those hours. However, I knew that every know and then a fellow rider wants to swap a shift. To take use of this, you have to monitor their app 24/7.\
+One day, I forgot to call. I needed those hours. However, I knew that every now and then a fellow rider wants to swap a shift. To take use of this, you have to monitor their app 24/7.\
 \
 And so - 'I can make a script for that', I thought.
 ## Features
@@ -53,12 +53,12 @@ python3 timeslot_creator.py
 
 Run the main script with *email, password, employeeID, appriseURL* as the arguments
 ```
-python hungry.py email@email.com password 11111 discord://webhook_id/webhook_token
+python run.py email@email.com password 11111 discord://webhook_id/webhook_token
 ```
 
 Make it run 24/7, every 30 seconds
 ```
-python hungry.py email@email.com password 11111 discord://webhook_id/webhook_token -f 30
+python run.py email@email.com password 11111 discord://webhook_id/webhook_token -f 30
 ```
 Recommendation: Use cron on Linux and Task Scheduler on Windows instead of using the the -f / --frequency argument, to not have to leave the script running.
 ## Available arguments
