@@ -56,8 +56,9 @@ class HungryAPI:
             resp = requests.post(HungryAPI.URL_AUTH, headers=headers, json=data)
             resp.raise_for_status()
             resp_json = resp.json()
-            # set token and expiration
-            Storage().save_token_and_cityid(resp_json["token"], time.time() + HungryAPI.TOKEN_EXPIRY_SECONDS, resp_json["city_id"])
+            Storage().token = resp_json["token"]
+            Storage().token_expiration = time.time() + HungryAPI.TOKEN_EXPIRY_SECONDS
+            Storage().city_id = resp_json["city_id"]
         except Exception:
             raise Exception("Failed to authenticate! Wrong credentials?")
 

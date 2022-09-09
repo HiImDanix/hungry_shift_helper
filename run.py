@@ -1,6 +1,6 @@
 import argparse
 from datetime import datetime
-from typing import List, Dict, Set
+from typing import List, Set
 
 import apprise
 import time
@@ -57,7 +57,7 @@ def main():
         logging.info("No timeslots found. Creating a default one that covers everything")
         # timeslot that covers all days and times
         timeslot: RecurringTimeslot = get_eternal_timeslot()
-        storage.add_recurring_timeslot(timeslot)
+        storage.recurring_timeslots = [timeslot]
 
     # Run once or every args.frequency seconds
     logging.debug("Starting the main part of the script")
@@ -70,16 +70,16 @@ def main():
             for shift in shifts:
                 logging.debug(f"Shift: {shift}")
 
-            # Read previously retrieved shifts from storage
-            saved_shifts: List[Shift] = storage.get_shifts()
+            # Get previously found shifts
+            saved_shifts: List[Shift] = storage.shifts
             logging.debug(f"Got {len(saved_shifts)} shifts from storage")
 
             # Identify unique shifts
             new_shifts: List[Shift] = [shift for shift in shifts if shift not in saved_shifts]
             logging.debug(f"Found {len(new_shifts)} unique shifts")
 
-            # Save all retrieved shifts to storage
-            storage.save_shifts(shifts)
+            # Save all retrieved shifts
+            storage.shifts = shifts
 
             # Get shifts that satisfy the user specified timeslots
             valid_shifts: Set = set()
