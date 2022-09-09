@@ -101,8 +101,8 @@ def main():
 
             # Notify user if a valid shift(s) is found
             if len(valid_shifts) > 0:
-                title: str = f"{len(valid_shifts)} shifts were " + ('procured.' if args.auto_take else 'found.')
-                body: str = '\n'.join(str(s) for s in shifts)
+                title: str = f"{len(valid_shifts)} new shifts were " + ('procured.' if args.auto_take else 'found.')
+                body: str = '\n'.join(str(s) for s in valid_shifts)
                 appriseObj.notify(body=body, title=title)
             else:
                 logging.info("No shifts found")
@@ -115,7 +115,7 @@ def main():
             try:
                 appriseObj.notify(body=str(e), title="Hungry-Shift-Helper error")
             except Exception as e:
-                logging.error(f"Error: {e}")
+                logging.error(f"Could not send error message: {e}")
         # sleep
         if args.frequency:
             time.sleep(args.frequency)

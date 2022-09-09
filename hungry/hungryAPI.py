@@ -164,7 +164,7 @@ class HungryAPI:
 
     @staticmethod
     def _resp_to_shifts(shifts: list) -> Set[Shift]:
-        """ Converts a list of dictionary represented shifts to a set of Shift objects.
+        """ Converts a list of dictionary represented shifts (from GET response) to a set of Shift objects.
 
         Args:
             shifts: response from the server as json
@@ -174,15 +174,19 @@ class HungryAPI:
         """
         shift_objects = set()
         for shift in shifts:
-            shift_id = shift["id"]
-            start = datetime.strptime(shift["start"], "%Y-%m-%dT%H:%M:%S")
-            end = datetime.strptime(shift["end"], "%Y-%m-%dT%H:%M:%S")
-            status = shift["state"]
-            time_zone = shift["time_zone"]
-            starting_point_id = shift["starting_point_id"]
-            starting_point_name = shift["starting_point_name"]
-            shift = Shift(shift_id, start, end, status, time_zone, starting_point_id, starting_point_name)
-            shift_objects.add(shift)
+            try:
+                shift_id = shift["id"]
+                start = datetime.strptime(shift["start"], "%Y-%m-%dT%H:%M:%S")
+                end = datetime.strptime(shift["end"], "%Y-%m-%dT%H:%M:%S")
+                status = shift["state"]
+                time_zone = shift["time_zone"]
+                starting_point_id = shift["starting_point_id"]
+                starting_point_name = shift["starting_point_name"]
+                shift = Shift(shift_id, start, end, status, time_zone, starting_point_id, starting_point_name)
+                shift_objects.add(shift)
+            except KeyError as e:
+                raise Exception("Failed to parse shift: " + str(shift) + ". Missing key: " + str(e))
+
         return shift_objects
 
 
