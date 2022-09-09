@@ -47,7 +47,7 @@ def main():
     storage: Storage = Storage()
 
     # if no recurring timeslots are present, and take shifts is enabled -> confirm action
-    if args.auto_take and len(storage.recurringTimeslots) == 0:
+    if args.auto_take and len(storage.recurring_timeslots) == 0:
         print("No recurring timeslots are set and auto-take is enabled. Do you want to continue? [y/n]")
         if input().lower() != "y":
             exit(0)
@@ -135,8 +135,6 @@ def get_eternal_timeslot() -> RecurringTimeslot:
     # return a recurring timeslot
     return RecurringTimeslot(days_of_week, start.time(), end.time(), shift_length)
 
+
 if __name__ == "__main__":
     main()
-
-
-
