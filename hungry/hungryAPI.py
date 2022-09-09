@@ -166,10 +166,10 @@ class HungryAPI:
         """
         shift_objects = set()
         for shift in shifts:
-            shift_id = shift["shift_id"]
+            shift_id = shift["id"]
             start = datetime.strptime(shift["start"], "%Y-%m-%dT%H:%M:%S")
             end = datetime.strptime(shift["end"], "%Y-%m-%dT%H:%M:%S")
-            status = shift["status"]
+            status = shift["state"]
             time_zone = shift["time_zone"]
             starting_point_id = shift["starting_point_id"]
             starting_point_name = shift["starting_point_name"]
