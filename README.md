@@ -24,7 +24,7 @@ And so - 'I can make a script for that', I thought.
 - Specify your preferred timeslots
 - Get notified when a shift is available on 70+ services with [Apprise](https://github.com/caronc/apprise/wiki)
 - Leave running 24/7
-- ~~Automatically take shifts~~ (only swappable shifts for now)
+- Automatically take shifts [experimental]
 
 ## Installation
 

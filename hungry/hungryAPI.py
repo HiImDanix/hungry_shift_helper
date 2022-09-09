@@ -39,6 +39,7 @@ class HungryAPI:
         self.URL_SWAPS: str = f"{HungryAPI.API_DOMAIN}/api/rooster/v3/employees/{employee_id}/available_swaps"
         self.URL_UNASSIGNED: str = f"{HungryAPI.API_DOMAIN}/api/rooster/v3/employees/{employee_id}/available_unassigned_shifts"
         self.URL_TAKE_SWAP: str = f"{HungryAPI.API_DOMAIN}/api/rooster/v3/{{}}/swap"
+        self.URL_TAKE_UNASSIGNED: str = f"{HungryAPI.API_DOMAIN}/api/rooster/v3/unassigned_shifts/{{}}/assign"
 
         # App version
         self.app_version: int
@@ -143,9 +144,16 @@ class HungryAPI:
         resp.raise_for_status()
 
     def _take_unassigned_shift(self, shift: Shift):
-        # TODO: Implement
-        pass
-
+        url_take_unassigned = self.URL_TAKE_UNASSIGNED.format(shift.id)
+        body = {
+            "id": shift.id,
+            "start_at": shift.start_at,
+            "end_at": shift.end_at,
+            "starting_point_id": shift.starting_point_id,
+            "employee_ids": [self.EMPLOYEE_ID]
+        }
+        resp = requests.post(url_take_unassigned, auth=BearerAuth(self.token), json=body)
+        resp.raise_for_status()
     def __get_params(self) -> dict:
         """ Returns a dictionary of parameters for the GET request for getting shifts. """
         return {"start_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
