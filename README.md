@@ -2,7 +2,7 @@
 ![Logo](https://u.cubeupload.com/mrdanix448/Asset26x.png)
 
 
-# Hungry Shift Helper [![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-yellow.svg)](https://opensource.org/licenses/) [![stability-experimental](https://img.shields.io/badge/stability-experimental-orange.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#experimental)
+# Hungry Shift Helper [![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-yellow.svg)](https://opensource.org/licenses/) ![Abandoned](https://img.shields.io/badge/status-abandoned-red.svg)
 
 a CLI app that automatically notifies you on Discord, Slack, Telegram etc. when there's a shift available for https://hungry.dk riders. \
 Just specify your timeslots, and leave it running 24/7.
@@ -44,11 +44,6 @@ pip install -r requirements.txt
 Set up your preferred timeslots for when you want to work
 ```
 python timeslot_creator.py
-```
-
-or Linux:
-```
-python3 timeslot_creator.py
 ```
 
 Run the main script with *email, password, employeeID, appriseURL* as the arguments
